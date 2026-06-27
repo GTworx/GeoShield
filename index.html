@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geo-Shield | Global Disaster & Event Dashboard</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header Banner -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-icon">
+        <i class="fa-solid fa-earth-americas"></i>
+      </div>
+      <div class="title-area">
+        <h1>GEO-SHIELD</h1>
+        <p>Global Disaster & Severe Event Monitor</p>
+      </div>
+    </div>
+    
+    <div class="controls-area">
+      <!-- Time Range Tabs -->
+      <div class="time-tabs">
+        <button class="tab-btn" data-range="24h">24 Hours</button>
+        <button class="tab-btn active" data-range="7d">1 Week</button>
+        <button class="tab-btn" data-range="30d">1 Month</button>
+      </div>
+      
+      <!-- Refresh Button -->
+      <button class="refresh-btn" id="refreshBtn">
+        <i class="fa-solid fa-arrows-rotate"></i>
+        <span>Sync Live Data</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Dashboard Main Workspace -->
+  <div class="dashboard-container">
+    
+    <!-- Sidebar Panel (Filters & Event List) -->
+    <aside class="sidebar">
+      <!-- Search Input -->
+      <div class="search-container">
+        <div class="search-wrapper">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search events by location or title...">
+        </div>
+      </div>
+      
+      <!-- Category Filters -->
+      <div class="filters-container">
+        <div class="section-title">
+          <span>Event Categories</span>
+          <button id="toggleAllFilters" style="background:none; border:none; color:var(--accent-primary); cursor:pointer; font-size:0.75rem; font-weight:600;">Toggle All</button>
+        </div>
+        <div class="filter-badges">
+          <!-- Earthquakes Filter -->
+          <div class="filter-badge active eq" data-category="earthquakes">
+            <span class="badge-label"><i class="fa-solid fa-house-crack"></i> Earthquakes</span>
+            <span class="badge-count" id="count-eq">0</span>
+          </div>
+          <!-- Volcanoes Filter -->
+          <div class="filter-badge active vol" data-category="volcanoes">
+            <span class="badge-label"><i class="fa-solid fa-volcano"></i> Volcanoes</span>
+            <span class="badge-count" id="count-vol">0</span>
+          </div>
+          <!-- Forest Fires Filter -->
+          <div class="filter-badge active fire" data-category="wildfires">
+            <span class="badge-label"><i class="fa-solid fa-fire"></i> Wildfires</span>
+            <span class="badge-count" id="count-fire">0</span>
+          </div>
+          <!-- Storms Filter -->
+          <div class="filter-badge active storm" data-category="severeStorms">
+            <span class="badge-label"><i class="fa-solid fa-wind"></i> Severe Storms</span>
+            <span class="badge-count" id="count-storm">0</span>
+          </div>
+          <!-- Floods Filter -->
+          <div class="filter-badge active flood" data-category="floods">
+            <span class="badge-label"><i class="fa-solid fa-cloud-showers-heavy"></i> Floods</span>
+            <span class="badge-count" id="count-flood">0</span>
+          </div>
+          <!-- Other Filter -->
+          <div class="filter-badge active other" data-category="other">
+            <span class="badge-label"><i class="fa-solid fa-triangle-exclamation"></i> Other Events</span>
+            <span class="badge-count" id="count-other">0</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Event List Feed -->
+      <div class="feed-container">
+        <div class="section-title">
+          <span>Live Feed</span>
+          <span id="feed-stats" style="font-size:0.75rem; color:var(--text-muted);">Showing 0 events</span>
+        </div>
+        <div class="event-list" id="eventList">
+          <div class="no-events">Loading live event data...</div>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Map Canvas -->
+    <main class="map-container">
+      <div id="map"></div>
+      
+      <!-- Floating Event Details Overlay (Hidden by Default) -->
+      <div class="map-overlay-panel" id="detailPanel" style="display: none;">
+        <div class="panel-title">
+          <span id="detailTitle">Disaster Details</span>
+          <button id="closeDetailBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="event-details-content" id="detailContent">
+          <!-- Content Dynamically Populated by JS -->
+        </div>
+      </div>
+      
+      <!-- Floating Dashboard Stats Overlay -->
+      <div class="stats-panel">
+        <div class="section-title" style="margin-bottom:0.25rem;">
+          <span>Activity Overview</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-val" id="stat-total">0</div>
+            <div class="stat-lbl">Total Events</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="stat-max-eq">-</div>
+            <div class="stat-lbl">Max Eq Mag</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val" id="stat-active-vo">0</div>
+            <div class="stat-lbl">Active Volc</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Leaflet MarkerCluster JS -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  
+  <!-- Custom Javascript Application -->
+  <script src="app.js"></script>
+</body>
+</html>
